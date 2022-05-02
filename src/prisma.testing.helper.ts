@@ -8,6 +8,8 @@ export class PrismaTestingHelper<T extends PrismaClient> {
   /**
    * Instantiate a new PrismaTestingHelper for the given PrismaClient. Will start transactions on this given client.
    * Does not support multiple transactions at once, instantiate multiple PrismaTestingHelpers if you need this.
+   *
+   * @param prismaClient - The original PrismaClient or PrismaService. All calls to functions that don't exist on the transaction client will be routed to this original object.
    */
   constructor(private readonly prismaClient: T) {
     const prismaTestingHelper = this;
@@ -44,10 +46,10 @@ export class PrismaTestingHelper<T extends PrismaClient> {
   }
 
   /**
-   * Returns a Prisma transaction client that can be used instead of the regular testing client to run a transaction.
-   *
+   * Starts a new transaction and automatically updates the proxy client (no need to fetch it again).
+   * Must be called before each test.
    */
-  public async startNewTransaction(opts: { timeout?: number; maxWait?: number}): Promise<void> {
+  public async startNewTransaction(opts?: { timeout?: number; maxWait?: number}): Promise<void> {
     if(this.endCurrentTransactionPromise != null) {
       throw new Error('rollbackCurrentTransaction must be called before starting a new transaction');
     }
@@ -64,6 +66,9 @@ export class PrismaTestingHelper<T extends PrismaClient> {
     });
   }
 
+  /**
+   * Ends the currently active transaction. Must be called after each test.
+   */
   public rollbackCurrentTransaction(): void {
     if(this.endCurrentTransactionPromise == null) {
       throw new Error('No transaction currently active');
