@@ -97,3 +97,5 @@ Ends the currently active transaction. Must be called after each test so that a 
   * This might be supported in the future using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a> before each query if needed.
     
     (internal note: these savepoints must be released after each query because there will be performance problems with more than 64 active savepoints).
+* Sequences (auto increment IDs) are not reset when transaction are rolled back. If you need specific IDs in your tests, you can 
+  <a href="https://stackoverflow.com/a/41108598">reset all sequences by using SETVAL</a> before each test.
