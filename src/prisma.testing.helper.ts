@@ -1,9 +1,9 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 
 export class PrismaTestingHelper<T extends PrismaClient> {
-  private endCurrentTransactionPromise?: (value?: unknown) => void;
-  private proxyClient: T;
+  private readonly proxyClient: T;
   private currentPrismaTransactionClient?: Prisma.TransactionClient;
+  private endCurrentTransactionPromise?: (value?: unknown) => void;
 
   /**
    * Instantiate a new PrismaTestingHelper for the given PrismaClient. Will start transactions on this given client.
@@ -27,10 +27,10 @@ export class PrismaTestingHelper<T extends PrismaClient> {
             }
           };
         }
-        if(prismaTestingHelper.currentPrismaTransactionClient == null || (prismaTestingHelper.currentPrismaTransactionClient as any)[prop] == null) {
-          return Reflect.get(target, prop, receiver);
+        if(prismaTestingHelper.currentPrismaTransactionClient != null && (prismaTestingHelper.currentPrismaTransactionClient as any)[prop] != null) {
+          return Reflect.get(prismaTestingHelper.currentPrismaTransactionClient, prop, receiver);
         }
-        return Reflect.get(prismaTestingHelper.currentPrismaTransactionClient, prop, receiver);
+        return Reflect.get(target, prop, receiver);
       }
     });
   }
