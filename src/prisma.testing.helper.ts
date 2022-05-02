@@ -49,7 +49,7 @@ export class PrismaTestingHelper<T extends PrismaClient> {
    */
   public async startNewTransaction(opts: { timeout?: number; maxWait?: number}): Promise<void> {
     if(this.endCurrentTransactionPromise != null) {
-      throw new Error('rollbackCurrentTransaction must be called before getting a new prisma client');
+      throw new Error('rollbackCurrentTransaction must be called before starting a new transaction');
     }
     // This is a workaround for https://github.com/prisma/prisma/issues/12458
     return new Promise(resolve => {
