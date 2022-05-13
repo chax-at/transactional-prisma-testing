@@ -20,9 +20,11 @@ export class PrismaTestingHelper<T extends PrismaClient> {
           return async (args: any) => {
             if(Array.isArray(args)) {
               // "Regular" transaction - list of querys that must be awaited
+              const ret = [];
               for(const query of args) {
-                await query;
+                ret.push(await query);
               }
+              return ret;
             } else {
               // Interactive transaction - callback function that gets the prisma transaction client as argument
               return args(prismaTestingHelper.currentPrismaTransactionClient);
