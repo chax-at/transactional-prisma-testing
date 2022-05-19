@@ -75,7 +75,7 @@ and then execute all test cases, and all calls will always be routed to the newe
 
 It is usually enough to fetch this once and then use this reference everywhere.
 
-#### startNewTransaction(opts?: { timeout?: number; maxWait?: number}): Promise<void>
+#### startNewTransaction(opts?: { timeout?: number; maxWait?: number}): Promise\<void\>
 Starts a new transaction. Must be called before each test (and should be called before any query on the proxy client is executed).
 You can provide timeout values - note that the transaction `timeout` must be long enough so that your
 whole test case will be executed during this timeout.
