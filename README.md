@@ -86,16 +86,20 @@ You must call `rollbackCurrentTransaction` before calling this method again.
 Ends the currently active transaction. Must be called after each test so that a new transaction can be started.
 
 ## Limitations / Caveats
-* Transactions in test cases are generally allowed
-  * However, as of now, inner transactions are simply executed in the outer transaction. Inner transaction rollback is not supported yet (i.e. you cannot have a test case which will cause an inner transaction to rollback).
-    * This might be supported in the future using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a> if needed. 
-  * In any case, inner transaction atomicitiy is not guaranteed, e.g. you cannot use `await Promise.all(/* Multiple calls that will start transactions */);` in your tests (because queries might be executed in any order). Use a regular prisma client instead or call your queries sequentially.
-* There is no query exception handling during the transaction
-  * The whole test case is executed inside a single transaction. This means that a single failing query 
+* There is no individual query exception handling
+  * **TL;DR**: It is not possible to execute queries after a failing query until `rollbackCurrentTransaction` is called (i.e. in the next test case)
+  * If an individual query fails, PostgreSQL will normally do a rollback for it (if it is not inside a transaction).
+  * However, the whole test case is executed inside a single transaction. This means that a single failing query
     (e.g. a unique constraint error) will close the transaction, preventing any other queries from being executed.
-    Therefore, your test case must only contain one failing query at most, and it must be the last query in the test case.
-  * This might be supported in the future using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a> before each query if needed.
-    
-    (internal note: these savepoints must be released after each query because there will be performance problems with more than 64 active savepoints).
+    Therefore, your test case must only contain one failing query at most, and it must be the last query in the test case. 
+  * This might be supported in the future using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a> around each query if needed.
+
+    (implementation note: these savepoints must be released after each query because there will be performance problems with more than 64 active savepoints).
+* Transactions in test cases are generally supported
+  * Inner transaction rollback is implemented by using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a>
+    and behaves as expected (compared to single query rollback as described above).
+  * However, parallel transaction execution is not supported, e.g. you cannot use `await Promise.all(/* Multiple calls that will each start transactions */);`
+    in your tests (because queries might be executed in any order and savepoint rollback does not work in this case).
+    Use a regular prisma client instead or call your queries sequentially.
 * Sequences (auto increment IDs) are not reset when transaction are rolled back. If you need specific IDs in your tests, you can 
   <a href="https://stackoverflow.com/a/41108598">reset all sequences by using SETVAL</a> before each test.

@@ -4,6 +4,7 @@ export class PrismaTestingHelper<T extends PrismaClient> {
   private readonly proxyClient: T;
   private currentPrismaTransactionClient?: Prisma.TransactionClient;
   private endCurrentTransactionPromise?: (value?: unknown) => void;
+  private savepointId = 0;
 
   /**
    * Instantiate a new PrismaTestingHelper for the given PrismaClient. Will start transactions on this given client.
@@ -15,28 +16,60 @@ export class PrismaTestingHelper<T extends PrismaClient> {
     const prismaTestingHelper = this;
     this.proxyClient = new Proxy(prismaClient, {
       get(target, prop, receiver) {
-        if(prop === '$transaction') {
-          // TODO - maybe add savepoints here in the future? (https://github.com/prisma/prisma/issues/12898)
-          return async (args: any) => {
-            if(Array.isArray(args)) {
-              // "Regular" transaction - list of querys that must be awaited
-              const ret = [];
-              for(const query of args) {
-                ret.push(await query);
-              }
-              return ret;
-            } else {
-              // Interactive transaction - callback function that gets the prisma transaction client as argument
-              return args(prismaTestingHelper.currentPrismaTransactionClient);
-            }
-          };
+        if(prismaTestingHelper.currentPrismaTransactionClient == null) {
+          // No transaction active, relay to original client
+          return Reflect.get(target, prop, receiver);
         }
-        if(prismaTestingHelper.currentPrismaTransactionClient != null && (prismaTestingHelper.currentPrismaTransactionClient as any)[prop] != null) {
+        if(prop === '$transaction') {
+          return prismaTestingHelper.transactionProxyFunction.bind(prismaTestingHelper);
+        }
+        if((prismaTestingHelper.currentPrismaTransactionClient as any)[prop] != null) {
           return Reflect.get(prismaTestingHelper.currentPrismaTransactionClient, prop, receiver);
         }
+        // The property does not exist on the transaction client, relay to original client
         return Reflect.get(target, prop, receiver);
       }
     });
+  }
+
+  /**
+   * Replacement for the original prismaClient.$transaction function that will work inside transactions and uses savepoints.
+   */
+  private async transactionProxyFunction(args: unknown): Promise<unknown> {
+    return this.wrapInSavepoint(async () => {
+      if(Array.isArray(args)) {
+        // "Regular" transaction - list of querys that must be awaited
+        const ret = [];
+        for(const query of args) {
+          ret.push(await query);
+        }
+        return ret;
+      } else if(typeof args === 'function') {
+        // Interactive transaction - callback function that gets the prisma transaction client as argument
+        return args(this.currentPrismaTransactionClient);
+      } else {
+        throw new Error('[transactional-prisma-testing] Invalid $transaction call. Argument must be an array or a callback function.');
+      }
+    });
+  }
+
+  /**
+   * Creates a savepoint before calling the function. Will automatically do a rollback to the savepoint on error.
+   */
+  private async wrapInSavepoint<T>(func: () => Promise<T>): Promise<T> {
+    if(this.currentPrismaTransactionClient == null) {
+      throw new Error('[transactional-prisma-testing] Invalid call to $transaction while no transaction is active.');
+    }
+    const savepointName = `transactional_testing_${this.savepointId++}`;
+    await this.currentPrismaTransactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
+    try {
+      const ret = await func();
+      await this.currentPrismaTransactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
+      return ret;
+    } catch(err) {
+      await this.currentPrismaTransactionClient.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+      throw err;
+    }
   }
 
   /**
