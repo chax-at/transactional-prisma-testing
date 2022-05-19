@@ -63,7 +63,7 @@ export class PrismaTestingHelper<T extends PrismaClient> {
           this.endCurrentTransactionPromise = innerResolve;
           resolve();
         });
-        throw new Error('[fast-prisma-testing] internal rollback');
+        throw new Error('[transactional-prisma-testing] internal rollback');
       }, opts).catch(() => {});
     });
   }

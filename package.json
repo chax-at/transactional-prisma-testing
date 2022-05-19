@@ -1,10 +1,10 @@
 {
   "name": "@chax-at/transactional-prisma-testing",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Provides an easy way to execute database tests in a transaction that will be rolled back after each test for fast testing",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
-  "repository": "github:chax-at/fast-prisma-testing",
+  "repository": "github:chax-at/transactional-prisma-testing",
   "scripts": {
     "prepare": "npm run build",
     "build": "tsc"
