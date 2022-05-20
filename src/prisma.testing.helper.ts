@@ -5,14 +5,16 @@ export class PrismaTestingHelper<T extends PrismaClient> {
   private currentPrismaTransactionClient?: Prisma.TransactionClient;
   private endCurrentTransactionPromise?: (value?: unknown) => void;
   private savepointId = 0;
+  private transactionLock: Promise<void> | null = null;
 
   /**
    * Instantiate a new PrismaTestingHelper for the given PrismaClient. Will start transactions on this given client.
    * Does not support multiple transactions at once, instantiate multiple PrismaTestingHelpers if you need this.
    *
    * @param prismaClient - The original PrismaClient or PrismaService. All calls to functions that don't exist on the transaction client will be routed to this original object.
+   * @param options
    */
-  constructor(private readonly prismaClient: T) {
+  constructor(private readonly prismaClient: T, private readonly options?: { disableTransactionLock?: boolean }) {
     const prismaTestingHelper = this;
     this.proxyClient = new Proxy(prismaClient, {
       get(target, prop, receiver) {
@@ -57,9 +59,18 @@ export class PrismaTestingHelper<T extends PrismaClient> {
    * Creates a savepoint before calling the function. Will automatically do a rollback to the savepoint on error.
    */
   private async wrapInSavepoint<T>(func: () => Promise<T>): Promise<T> {
+    if(this.options?.disableTransactionLock !== true) {
+      while(this.transactionLock != null) {
+        await this.transactionLock;
+      }
+    }
     if(this.currentPrismaTransactionClient == null) {
       throw new Error('[transactional-prisma-testing] Invalid call to $transaction while no transaction is active.');
     }
+    let lockResolve!: (value: (void | PromiseLike<void>)) => void;
+    this.transactionLock = new Promise(resolve => {
+      lockResolve = resolve;
+    });
     const savepointName = `transactional_testing_${this.savepointId++}`;
     await this.currentPrismaTransactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
     try {
@@ -69,6 +80,9 @@ export class PrismaTestingHelper<T extends PrismaClient> {
     } catch(err) {
       await this.currentPrismaTransactionClient.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
       throw err;
+    } finally {
+      this.transactionLock = null;
+      lockResolve();
     }
   }
 

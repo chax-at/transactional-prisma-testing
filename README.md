@@ -98,8 +98,10 @@ Ends the currently active transaction. Must be called after each test so that a 
 * Transactions in test cases are generally supported
   * Inner transaction rollback is implemented by using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a>
     and behaves as expected (compared to single query rollback as described above).
-  * However, parallel transaction execution is not supported, e.g. you cannot use `await Promise.all(/* Multiple calls that will each start transactions */);`
-    in your tests (because queries might be executed in any order and savepoint rollback does not work in this case).
-    Use a regular prisma client instead or call your queries sequentially.
+  * Parallel transaction execution is not completely supported, e.g. you should not use `await Promise.all(/* Multiple calls that will each start transactions */);`
+    in your tests. Use a regular prisma client or call your queries sequentially instead.
+    * `$transaction` calls use a lock internally and are therefore automatically executed sequentially (There will only be one active inner transaction at one time).
+    * However, inner transaction rollback does not work correctly if other queries (outside of the transaction) have 
+      been executed while the transaction was open, therefore it is recommended to not use parallel execution with inner transactions.
 * Sequences (auto increment IDs) are not reset when transaction are rolled back. If you need specific IDs in your tests, you can 
   <a href="https://stackoverflow.com/a/41108598">reset all sequences by using SETVAL</a> before each test.
