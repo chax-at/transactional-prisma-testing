@@ -21,10 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - License changed to MIT
 
-## [0.1.1] - 2022-05-13
+## 0.1.1 - 2022-05-13
 ### Fixed
 - Proxied `$transaction<R>(queries: PrismaPromise<R>[]): Promise<R[]>` API now correctly returns `Promise<R[]>` instead of `Promise<void>`
 
-## [0.1.0] - 2022-05-02
+## 0.1.0 - 2022-05-02
 ### Added
 - Initial release
+
+[0.4.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.3.0...0.4.0
+[0.3.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.2.1...0.3.0
+[0.2.1]: https://github.com/chax-at/transactional-prisma-testing/compare/0.2.0...0.2.1
+[0.2.0]: https://github.com/chax-at/transactional-prisma-testing/releases/tag/0.2.0
