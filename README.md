@@ -4,9 +4,10 @@ be rolled back after each test. This allows fast test execution while still prov
 It also enabled parallel test execution against the same database.
 
 ## Prerequisites
-* The <a href="https://github.com/prisma/prisma">Prisma</a> ORM is used in the project.
-* The project used PostgreSQL.
+* You are using the <a href="https://github.com/prisma/prisma">Prisma</a> ORM in your project.
+* You are using PostgreSQL (MySQL should work as well, but is not tested yet).
 * The preview feature <a href="https://www.prisma.io/docs/concepts/components/prisma-client/transactions#the-transaction-api">Interactive Transaction</a> is enabled (or no longer a preview feature).
+* You are using Node 14 or higher.
 
 ## Usage
 Install the package by running
