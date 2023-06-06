@@ -60,7 +60,7 @@ function getMockRootModuleBuilder(): TestingModuleBuilder {
 ### PrismaTestingHelper
 The `PrismaTestingHelper` provides a proxy to the prisma client and manages this proxy.
 
-#### constructor(prismaClient: T, options?: TestingHelperOptions)
+#### constructor(prismaClient: T)
 Create a single `PrismaTestingHelper` per test runner (or a single global one if tests are executed sequentially).
 The constructor parameter is the original `PrismaClient` that will be used to start transaction.
 Note that it is possible to use any objects that extend the PrismaClient, e.g. a <a href="https://docs.nestjs.com/recipes/prisma#use-prisma-client-in-your-nestjs-services">NestJS PrismaService</a>.
