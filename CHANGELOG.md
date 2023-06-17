@@ -4,10 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2023-06-06
+## [1.0.0] - 2023-06-17
 ###  :warning: Breaking Changes
 - All statements are now wrapped in an implicit transaction (#2).
   This new behaviour matches PostgreSQL's behaviour and allows parallel transactions as well as failing statements.
+  - This might cause a slight performance degradation. Stay on 0.5.0 if you need the better performance and don't rely on implicit statement transactions.
+- Dropped support for Prisma versions before 4.7.0 (to ensure interactive transactions are available). Stay on 0.5.0 if you are using an older Prisma version.
 - This package now requires Node v14+.
 - There is no longer a way to disable transaction locks.
 

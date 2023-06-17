@@ -56,7 +56,7 @@ export class PrismaTestingHelper<T extends PrismaClient> {
         }
 
         // original function, e.g. `findFirst`
-        const originalFunction = originalReturnValue;
+        const originalFunction = originalReturnValue as (...args: unknown[]) => Promise<unknown>;
         // Prisma functions only get evaluated once they're awaited (i.e. `then` is called)
         return (...args: unknown[]) => ({
           then: async (resolve: PromiseResolveFunction, reject: any) => {
@@ -70,7 +70,7 @@ export class PrismaTestingHelper<T extends PrismaClient> {
               }
 
               const value = await originalFunction(...args);
-              resolve(value);
+              resolve(value as any);
             } catch(e) {
               reject(e);
             }

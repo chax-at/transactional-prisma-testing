@@ -6,7 +6,7 @@ It also enabled parallel test execution against the same database.
 ## Prerequisites
 * You are using <a href="https://github.com/prisma/prisma">Prisma</a> in your project.
 * You are using PostgreSQL (other DBs might work but have not been tested).
-* You are using Prisma 4.7.0 or later, or the preview feature `interactiveTransactions` is enabled.
+* You are using Prisma 4.7.0 or later
 
 ## Usage
 Install the package by running
@@ -90,5 +90,5 @@ Ends the currently active transaction. Must be called after each test so that a 
   <a href="https://stackoverflow.com/a/41108598">reset all sequences by using SETVAL</a> before each test.
 * `@default(now())` in your schema (e.g. for a `createdAt` date) or similar functionality (e.g. `CURRENT_TIMESTAMP()` in PostgreSQL) will always use the **start of transaction** timestamp. Therefore, all `createdAt`-timestamps will have the same value during a test (because they are executed in the same transaction). If this behavior is problematic (e.g. because you want to find the latest entry by creation date), then you can use `@default(dbgenerated("statement_timestamp()"))` instead of `@default(now())` (if you do not rely on the default "`createdAt` = time at start of transaction instead of statement" behavior)
 * Transactions in test cases are completely supported by using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a>.
-  * If you are using parallel transactions (e.g. `await Promise.all(/* Multiple calls that will each start transactions */);), then they will
+  * If you are using parallel transactions (e.g. `await Promise.all(/* Multiple calls that will each start transactions */);)`, then they will
     automatically be executed sequentially (otherwise, Savepoints wouldn't work). You do not have to change your code for this to work.
