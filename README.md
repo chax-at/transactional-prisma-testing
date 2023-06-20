@@ -92,3 +92,4 @@ Ends the currently active transaction. Must be called after each test so that a 
 * Transactions in test cases are completely supported by using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a>.
   * If you are using parallel transactions (e.g. `await Promise.all(/* Multiple calls that will each start transactions */);)`, then they will
     automatically be executed sequentially (otherwise, Savepoints wouldn't work). You do not have to change your code for this to work.
+* Everything not mentioned above should match PostgreSQL's standard behavior when not running your code in a transaction. 

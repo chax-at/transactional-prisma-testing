@@ -6,11 +6,11 @@ const internalRollbackErrorSymbol = Symbol('Internal transactional-prisma-testin
 
 export class PrismaTestingHelper<T extends PrismaClient> {
   private readonly proxyClient: T;
+  private readonly asyncLocalStorage = new AsyncLocalStorage<{ transactionSavepoint: string }>();
   private currentPrismaTransactionClient?: Prisma.TransactionClient;
   private endCurrentTransactionPromise?: (value?: unknown) => void;
   private savepointId = 0;
   private transactionLock: Promise<void> | null = null;
-  private readonly asyncLocalStorage = new AsyncLocalStorage<{ transactionSavepoint: string }>();
 
   /**
    * Instantiate a new PrismaTestingHelper for the given PrismaClient. Will start transactions on this given client.
@@ -64,7 +64,7 @@ export class PrismaTestingHelper<T extends PrismaClient> {
               const isInTransaction = prismaTestingHelper.asyncLocalStorage.getStore()?.transactionSavepoint != null;
               if(!isInTransaction) {
                 // Implicitly wrap every query in a transaction
-                const value = await prismaTestingHelper.wrapInSavepoint(() => originalFunction(...args));
+                const value = await prismaTestingHelper.wrapInSavepoint(() => originalFunction(...args), true);
                 resolve(value as any);
                 return;
               }
@@ -104,25 +104,30 @@ export class PrismaTestingHelper<T extends PrismaClient> {
   /**
    * Creates a savepoint before calling the function. Will automatically do a rollback to the savepoint on error.
    */
-  private async wrapInSavepoint<T>(func: () => Promise<T>): Promise<T> {
-    const isInTransaction = this.asyncLocalStorage.getStore()?.transactionSavepoint != null;
-    let lockResolve = undefined;
-    if(!isInTransaction) {
-      lockResolve = await this.acquireTransactionLock();
-    }
+  private async wrapInSavepoint<T>(func: () => Promise<T>, isSingleStatement = false): Promise<T> {
+    let lockResolve = await this.acquireTransactionLock();
 
-    const savepointName = `transactional_testing_${this.savepointId++}`;
     try {
+      const savepointName = `transact_test_${this.savepointId++}`;
+
       if(this.currentPrismaTransactionClient == null) {
         throw new Error('[transactional-prisma-testing] Invalid call to $transaction while no transaction is active.');
       }
       await this.currentPrismaTransactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
-      const ret = await this.asyncLocalStorage.run({ transactionSavepoint: savepointName }, func);
-      await this.currentPrismaTransactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
-      return ret;
-    } catch(err) {
-      await this.currentPrismaTransactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
-      throw err;
+
+      try {
+        const ret = isSingleStatement
+          ? await func()
+          : await this.asyncLocalStorage.run({ transactionSavepoint: savepointName }, func);
+
+        // It is possible to not await this (i.e. add `.then().catch()`) but this sometimes fails due to transaction being closed which feels weird.
+        await this.currentPrismaTransactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
+        return ret;
+      } catch(err) {
+        await this.currentPrismaTransactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+        throw err;
+      }
+
     } finally {
       this.transactionLock = null;
       lockResolve?.();
