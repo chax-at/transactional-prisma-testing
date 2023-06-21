@@ -35,7 +35,7 @@ async function before(): Promise<void> {
     // Seed your database / Create source database state that will be used in each test case (if needed)
     // ...
     prismaTestingHelper = new PrismaTestingHelper(originalPrismaService);
-    // Save prismaService. All calls to this prismaService will be routed to the currently active transaction
+    // Save prismaService. All calls to this prismaService will be routed to the currently active transaction.
     prismaService = prismaTestingHelper.getProxyClient();
   }
 
@@ -48,7 +48,7 @@ function after(): void {
 }
 
 // NestJS specific code: Replace the original PrismaService when creating a testing module
-// Note that it is possible to cache this result and use the same module for all tests. The prismaService will automatically route all calls to the currently active transaction
+// Note that it is possible to cache this result and use the same module for all tests. The prismaService will automatically route all calls to the currently active transaction.
 function getMockRootModuleBuilder(): TestingModuleBuilder {
   return Test.createTestingModule({
     imports: [AppModule],
@@ -92,4 +92,5 @@ Ends the currently active transaction. Must be called after each test so that a 
 * Transactions in test cases are completely supported by using <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a>.
   * If you are using parallel transactions (e.g. `await Promise.all(/* Multiple calls that will each start transactions */);)`, then they will
     automatically be executed sequentially (otherwise, Savepoints wouldn't work). You do not have to change your code for this to work.
-* Everything not mentioned above should match PostgreSQL's standard behavior when not running your code in a transaction. 
+* Everything not mentioned above should match PostgreSQL's standard behavior when not running your code in a transaction.
+  * This includes partially rolling back the test transaction if a single query or inner transaction fails which is completely supported since version 1.0.0.
