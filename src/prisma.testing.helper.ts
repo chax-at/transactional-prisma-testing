@@ -112,20 +112,26 @@ export class PrismaTestingHelper<T extends PrismaClient> {
     }
 
     const savepointName = `transactional_testing_${this.savepointId++}`;
+    // Save transaction client here to ensure that SAVEPOINT and RELEASE SAVEPOINT will be executed for the same transaction (e.g. if the user forgot to await this call).
+    //
+    const transactionClient = this.currentPrismaTransactionClient;
     try {
-      if(this.currentPrismaTransactionClient == null) {
+      if(transactionClient == null) {
         throw new Error('[transactional-prisma-testing] Invalid call to $transaction while no transaction is active.');
       }
-      await this.currentPrismaTransactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
+      await transactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
       const ret = await this.asyncLocalStorage.run({ transactionSavepoint: savepointName }, func);
-      await this.currentPrismaTransactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
+      await transactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
       return ret;
     } catch(err) {
-      await this.currentPrismaTransactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+      await transactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
       throw err;
     } finally {
       this.transactionLock = null;
       lockResolve?.();
+      if(transactionClient !== this.currentPrismaTransactionClient) {
+        console.warn(`[transactional-prisma-testing] Transaction client changed while executing a query. Please make sure you await all queries in your test.`);
+      }
     }
   }
 
