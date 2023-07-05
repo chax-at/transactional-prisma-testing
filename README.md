@@ -4,9 +4,8 @@ be rolled back after each test. This allows fast test execution while still prov
 It also enabled parallel test execution against the same database.
 
 ## Prerequisites
-* You are using <a href="https://github.com/prisma/prisma">Prisma</a> in your project.
+* You are using <a href="https://github.com/prisma/prisma">Prisma</a> 4.7.0 or later in your project.
 * You are using PostgreSQL (other DBs might work but have not been tested).
-* You are using Prisma 4.7.0 or later
 
 ## Usage
 Install the package by running
