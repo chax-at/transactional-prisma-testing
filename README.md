@@ -1,7 +1,7 @@
 # @chax-at/transactional-prisma-testing
 This package provides an easy way to run test cases inside a single database transaction that will
 be rolled back after each test. This allows fast test execution while still providing the same source database state for each test.
-It also enabled parallel test execution against the same database.
+It also allows parallel test execution against the same database.
 
 ## Prerequisites
 * You are using <a href="https://github.com/prisma/prisma">Prisma</a> 4.7.0 or later in your project.
