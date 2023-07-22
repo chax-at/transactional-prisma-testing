@@ -29,6 +29,10 @@ const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(
 ### Fixed
 - Transaction rollback no longer silently catches all errors (#4).
 
+## [0.6.0] - 2023-07-22
+### Added
+- Added support for Prisma 5
+
 ## [0.5.0] - 2023-06-06
 ### Added
 - Added support for Prisma 4
@@ -57,7 +61,9 @@ const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(
 ### Added
 - Initial release
 
+[1.1.0]: https://github.com/chax-at/transactional-prisma-testing/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.5.0...1.0.0
+[0.5.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.2.1...0.3.0
