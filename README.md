@@ -6,6 +6,8 @@ It also allows parallel test execution against the same database.
 ## Prerequisites
 * You are using <a href="https://github.com/prisma/prisma">Prisma</a> 4.7.0 or later in your project.
 * You are using PostgreSQL (other DBs might work but have not been tested).
+* You are not using [Fluent API](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#fluent-api).
+
 
 ## Usage
 Install the package by running
@@ -85,6 +87,7 @@ You must call `rollbackCurrentTransaction` before calling this method again.
 Ends the currently active transaction. Must be called after each test so that a new transaction can be started.
 
 ## Limitations / Caveats
+* [Fluent API](https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#fluent-api) is not (yet?) supported.
 * Sequences (auto increment IDs) are not reset when transaction are rolled back. If you need specific IDs in your tests, you can 
   <a href="https://stackoverflow.com/a/41108598">reset all sequences by using SETVAL</a> before each test.
 * `@default(now())` in your schema (e.g. for a `createdAt` date) or similar functionality (e.g. `CURRENT_TIMESTAMP()` in PostgreSQL) will always use the **start of transaction** timestamp. Therefore, all `createdAt`-timestamps will have the same value during a test (because they are executed in the same transaction). If this behavior is problematic (e.g. because you want to find the latest entry by creation date), then you can use `@default(dbgenerated("statement_timestamp()"))` instead of `@default(now())` (if you do not rely on the default "`createdAt` = time at start of transaction instead of statement" behavior)
