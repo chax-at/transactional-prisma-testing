@@ -33,7 +33,7 @@ const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(
 ### Added
 - Added support for Prisma 5
 
-## [0.5.0] - 2023-06-06
+## [0.5.0] - 2022-07-06
 ### Added
 - Added support for Prisma 4
 
