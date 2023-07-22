@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2023-07-22
+### Added
+- Added support for Prisma 5
+- Added a warning when the transaction changes (`startNewTransaction` is called) while executing a query 
+  (e.g. you forgot to `await` a query in your test, and the next test gets executed while the query is still running)
+
+### Fixed
+- Savepoints will now always execute on the correct transaction, even if the query is not awaited and the transaction changes (i.e. `startNewTransaction` is called)
+- The proxied function return values now also provide `.catch` and `.finally`, allowing you to use
+```ts
+const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(/* ... */);
+```
+
 ## [1.0.0] - 2023-06-17
 ###  :warning: Breaking Changes
 - All statements are now wrapped in an implicit transaction (#2).

@@ -58,24 +58,50 @@ export class PrismaTestingHelper<T extends PrismaClient> {
         // original function, e.g. `findFirst`
         const originalFunction = originalReturnValue as (...args: unknown[]) => Promise<unknown>;
         // Prisma functions only get evaluated once they're awaited (i.e. `then` is called)
-        return (...args: unknown[]) => ({
-          then: async (resolve: PromiseResolveFunction, reject: any) => {
-            try {
-              const isInTransaction = prismaTestingHelper.asyncLocalStorage.getStore()?.transactionSavepoint != null;
-              if(!isInTransaction) {
-                // Implicitly wrap every query in a transaction
-                const value = await prismaTestingHelper.wrapInSavepoint(() => originalFunction(...args));
-                resolve(value as any);
-                return;
-              }
+        return (...args: unknown[]) => {
+          const catchCallbacks: Array<(reason: any) => unknown> = [];
+          const finallyCallbacks: Array<() => unknown> = [];
+          const returnedPromise = {
+            then: async (resolve: PromiseResolveFunction, reject: any) => {
+              try {
+                const isInTransaction = prismaTestingHelper.asyncLocalStorage.getStore()?.transactionSavepoint != null;
+                if(!isInTransaction) {
+                  // Implicitly wrap every query in a transaction
+                  const value = await prismaTestingHelper.wrapInSavepoint(() => originalFunction(...args));
+                  resolve(value as any);
+                  return value;
+                }
 
-              const value = await originalFunction(...args);
-              resolve(value as any);
-            } catch(e) {
-              reject(e);
-            }
-          },
-        });
+                const value = await originalFunction(...args);
+                resolve(value as any);
+                return value;
+              } catch(e) {
+                try {
+                  let error = e;
+                  for(const catchCallback of catchCallbacks) {
+                    error = await catchCallback(error);
+                  }
+                  reject(error);
+                } catch(innerError) {
+                  reject(innerError);
+                }
+              } finally {
+                finallyCallbacks.forEach(c => c());
+              }
+            },
+            catch: (callback: (reason: any) => unknown) => {
+              // I don't exactly know how `catch` is supposed to work, but this should work for the simple case at least
+              catchCallbacks.push(callback);
+              return returnedPromise;
+            },
+            finally: (callback: () => unknown) => {
+              finallyCallbacks.push(callback);
+              return returnedPromise;
+            },
+          };
+
+          return returnedPromise;
+        };
       },
     });
   }
@@ -105,6 +131,9 @@ export class PrismaTestingHelper<T extends PrismaClient> {
    * Creates a savepoint before calling the function. Will automatically do a rollback to the savepoint on error.
    */
   private async wrapInSavepoint<T>(func: () => Promise<T>): Promise<T> {
+    // Save transaction client here to ensure that SAVEPOINT and RELEASE SAVEPOINT will be executed for the same transaction (e.g. if the user forgot to await this call).
+    const transactionClient = this.currentPrismaTransactionClient;
+
     const isInTransaction = this.asyncLocalStorage.getStore()?.transactionSavepoint != null;
     let lockResolve = undefined;
     if(!isInTransaction) {
@@ -113,19 +142,22 @@ export class PrismaTestingHelper<T extends PrismaClient> {
 
     const savepointName = `transactional_testing_${this.savepointId++}`;
     try {
-      if(this.currentPrismaTransactionClient == null) {
+      if(transactionClient == null) {
         throw new Error('[transactional-prisma-testing] Invalid call to $transaction while no transaction is active.');
       }
-      await this.currentPrismaTransactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
+      await transactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
       const ret = await this.asyncLocalStorage.run({ transactionSavepoint: savepointName }, func);
-      await this.currentPrismaTransactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
+      await transactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
       return ret;
     } catch(err) {
-      await this.currentPrismaTransactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+      await transactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
       throw err;
     } finally {
       this.transactionLock = null;
       lockResolve?.();
+      if(transactionClient !== this.currentPrismaTransactionClient) {
+        console.warn(`[transactional-prisma-testing] Transaction changed while executing a query. Please make sure you await all queries in your test so that it only ends after all queries have been executed.`);
+      }
     }
   }
 
