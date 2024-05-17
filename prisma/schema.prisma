@@ -1,7 +1,6 @@
 // This is required for prisma to generate the client so that we can use all types from it
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["interactiveTransactions"]
 }
 
 datasource db {
