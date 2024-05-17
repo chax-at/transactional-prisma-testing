@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2024-05-18
+### Changed
+- Relaxed typing requirement when creating a new `PrismaTestingHelper` so that extended Prisma clients work as well
+
 ## [1.1.0] - 2023-07-22
 ### Added
 - Added support for Prisma 5
@@ -61,6 +65,7 @@ const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(
 ### Added
 - Initial release
 
+[1.2.0]: https://github.com/chax-at/transactional-prisma-testing/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/chax-at/transactional-prisma-testing/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.5.0...1.0.0
 [0.6.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.5.0...0.6.0
