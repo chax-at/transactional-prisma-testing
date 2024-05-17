@@ -1,12 +1,11 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { PrismaPromise, UnwrapTuple } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 import { AsyncLocalStorage } from 'async_hooks';
 
 type PromiseResolveFunction = (value: (void | PromiseLike<void>)) => void;
 const internalRollbackErrorSymbol = Symbol('Internal transactional-prisma-testing rollback error symbol');
 
 export class PrismaTestingHelper<T extends {
-  $transaction<P extends PrismaPromise<any>[]>(arg: [...P], options?: unknown): Promise<UnwrapTuple<P>>;
+  $transaction(arg: unknown[], options?: unknown): Promise<unknown>;
   $transaction<R>(fn: (client: unknown) => Promise<R>, options?: unknown): Promise<R>;
 }> {
   private readonly proxyClient: T;
@@ -223,11 +222,3 @@ export class PrismaTestingHelper<T extends {
     this.endCurrentTransactionPromise = undefined;
   }
 }
-
-
-const test = new PrismaClient();
-const prismaClient = new PrismaClient().$extends({});
-
-const testingHelper = new PrismaTestingHelper(prismaClient);
-const otherHelper = new PrismaTestingHelper(test);
-
