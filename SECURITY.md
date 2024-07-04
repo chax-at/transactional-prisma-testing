@@ -7,7 +7,7 @@ Each old major version is supported for 1 year after a new version has been rele
 | Version | Prisma Version                  | Supported          |
 | ------- | ------------------------------- | ------------------ |
 | 1.x.y   | ^4.7.0, 5                       | :white_check_mark: |
-| 0.x.y   | ^2.29.0\*, 3\*, 4\*, 5 | until 2024-06-17   |
+| 0.x.y   | ^2.29.0\*, 3\*, 4\*, 5          | :x:                |
 
 \* <4.7.0 is only supported with `interactiveTransactions` preview feature enabled in Prisma.
 
