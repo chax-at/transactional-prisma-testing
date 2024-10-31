@@ -1,6 +1,6 @@
 {
   "name": "@chax-at/transactional-prisma-testing",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Provides an easy way to execute database tests in a transaction that will be rolled back after each test for fast testing",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
@@ -12,7 +12,7 @@
   "author": "chax.at - Challenge Accepted",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^18.15.3",
+    "@types/node": "^22.8.6",
     "prisma": "^5.7.1",
     "typescript": "^5.3.3"
   },

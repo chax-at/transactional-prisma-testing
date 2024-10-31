@@ -71,13 +71,11 @@ export class PrismaTestingHelper<T extends {
                 if(!isInTransaction) {
                   // Implicitly wrap every query in a transaction
                   const value = await prismaTestingHelper.wrapInSavepoint(() => originalFunction(...args));
-                  resolve(value as any);
-                  return value;
+                  return resolve(value as any);
                 }
 
                 const value = await originalFunction(...args);
-                resolve(value as any);
-                return value;
+                return resolve(value as any);
               } catch(e) {
                 try {
                   let error = e;

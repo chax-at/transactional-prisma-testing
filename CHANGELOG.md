@@ -4,11 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2024-05-18
+## 1.2.1 - 2024-11-01
+### Fixed
+- Calling `const transformedData = await prisma.someTable.findMany().then(data => someTransformation(data))` now correctly returns the transformed data instead of directly returning the `findMany` result
+
+### Changed
+- Removed (outdated) source maps from build result
+
+## 1.2.0 - 2024-05-18
 ### Changed
 - Relaxed typing requirement when creating a new `PrismaTestingHelper` so that extended Prisma clients work as well
 
-## [1.1.0] - 2023-07-22
+## 1.1.0 - 2023-07-22
 ### Added
 - Added support for Prisma 5
 - Added a warning when the transaction changes (`startNewTransaction` is called) while executing a query 
@@ -21,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(/* ... */);
 ```
 
-## [1.0.0] - 2023-06-17
+## 1.0.0 - 2023-06-17
 ###  :warning: Breaking Changes
 - All statements are now wrapped in an implicit transaction (#2).
   This new behaviour matches PostgreSQL's behaviour and allows parallel transactions as well as failing statements.
@@ -33,27 +40,27 @@ const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(
 ### Fixed
 - Transaction rollback no longer silently catches all errors (#4).
 
-## [0.6.0] - 2023-07-22
+## 0.6.0 - 2023-07-22
 ### Added
 - Added support for Prisma 5
 
-## [0.5.0] - 2022-07-06
+## 0.5.0 - 2022-07-06
 ### Added
 - Added support for Prisma 4
 
-## [0.4.0] - 2022-05-19
+## 0.4.0 - 2022-05-19
 ### Changed
 - `$transaction` calls now use an internal lock to prevent multiple transactions from being executed at once (which won't work when using SAVEPOINTS)
 
-## [0.3.0] - 2022-05-19
+## 0.3.0 - 2022-05-19
 ### Added
 - Added <a href="https://www.postgresql.org/docs/current/sql-savepoint.html">PostgreSQL Savepoints</a> around `$transaction` calls
 
-## [0.2.1] - 2022-05-19
+## 0.2.1 - 2022-05-19
 ### Changed
 - Replaced all references to the old package name to `transactional-prisma-testing`
 
-## [0.2.0] - 2022-05-19
+## 0.2.0 - 2022-05-19
 ### Changed
 - License changed to MIT
 
@@ -64,13 +71,3 @@ const result = await this.prismaService.user.findUniqueOrThrow(/* ... */).catch(
 ## 0.1.0 - 2022-05-02
 ### Added
 - Initial release
-
-[1.2.0]: https://github.com/chax-at/transactional-prisma-testing/compare/1.1.0...1.2.0
-[1.1.0]: https://github.com/chax-at/transactional-prisma-testing/compare/1.0.0...1.1.0
-[1.0.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.5.0...1.0.0
-[0.6.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.5.0...0.6.0
-[0.5.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.4.0...0.5.0
-[0.4.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.3.0...0.4.0
-[0.3.0]: https://github.com/chax-at/transactional-prisma-testing/compare/0.2.1...0.3.0
-[0.2.1]: https://github.com/chax-at/transactional-prisma-testing/compare/0.2.0...0.2.1
-[0.2.0]: https://github.com/chax-at/transactional-prisma-testing/releases/tag/0.2.0
