@@ -30,6 +30,14 @@ export class PrismaTestingHelper<T extends {
           return Reflect.get(target, prop, receiver);
         }
 
+        const descriptor = Object.getOwnPropertyDescriptor(target, prop);
+        if (descriptor && !descriptor.configurable && !descriptor.writable) {
+          // If the value is non-writable, non-configurable, then the proxy must return the original value
+          // https://262.ecma-international.org/8.0/#sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver
+          // This happens when using an extended Prisma client and `_extensions` is accessed (see #14)
+          return Reflect.get(target, prop, receiver);
+        }
+
         if(prop === '$transaction') {
           return prismaTestingHelper.transactionProxyFunction.bind(prismaTestingHelper);
         }

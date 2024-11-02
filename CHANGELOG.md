@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.2.2 - 2024-11-02
+### Fixed
+- Using `$queryRaw` with an extended Prisma Client no longer throws a `TypeError`
+
 ## 1.2.1 - 2024-11-01
 ### Fixed
 - Calling `const transformedData = await prisma.someTable.findMany().then(data => someTransformation(data))` now correctly returns the transformed data instead of directly returning the `findMany` result
