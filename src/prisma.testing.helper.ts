@@ -164,9 +164,6 @@ export class PrismaTestingHelper<T extends {
     } finally {
       this.transactionLock = null;
       lockResolve?.();
-      if(transactionClient !== this.currentPrismaTransactionClient) {
-        console.warn(`[transactional-prisma-testing] Transaction changed while executing a query. Please make sure you await all queries in your test so that it only ends after all queries have been executed.`);
-      }
     }
   }
 
