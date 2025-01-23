@@ -59,7 +59,7 @@ export class PrismaTestingHelper<T extends {
 
   private getPrismaDelegateProxy<U extends object>(original: U): U {
     const prismaTestingHelper = this;
-    return new Proxy(original, {
+    const prismaDelegateProxy = new Proxy(original, {
       get(target, prop, receiver) {
         const originalReturnValue = Reflect.get(original, prop, receiver);
         if(typeof originalReturnValue !== 'function') {
@@ -78,11 +78,11 @@ export class PrismaTestingHelper<T extends {
                 const isInTransaction = prismaTestingHelper.asyncLocalStorage.getStore()?.transactionSavepoint != null;
                 if(!isInTransaction) {
                   // Implicitly wrap every query in a transaction
-                  const value = await prismaTestingHelper.wrapInSavepoint(() => originalFunction(...args));
+                  const value = await prismaTestingHelper.wrapInSavepoint(() => originalFunction.apply(prismaDelegateProxy, args));
                   return resolve(value as any);
                 }
 
-                const value = await originalFunction(...args);
+                const value = await originalFunction.apply(prismaDelegateProxy, args);
                 return resolve(value as any);
               } catch(e) {
                 try {
@@ -113,6 +113,8 @@ export class PrismaTestingHelper<T extends {
         };
       },
     });
+
+    return prismaDelegateProxy;
   }
 
   /**
