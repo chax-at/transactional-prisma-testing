@@ -4,6 +4,7 @@ on:
     types: [published]
 jobs:
   build:
+    environment: npm
     runs-on: ubuntu-latest
     permissions:
       contents: read
