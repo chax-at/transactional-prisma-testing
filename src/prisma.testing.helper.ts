@@ -3,6 +3,11 @@ import { AsyncLocalStorage } from 'async_hooks';
 
 type PromiseResolveFunction = (value: (void | PromiseLike<void>)) => void;
 const internalRollbackErrorSymbol = Symbol('Internal transactional-prisma-testing rollback error symbol');
+/**
+ * Postgres can cache up to 64 sub transactions by default (PGPROC_MAX_CACHED_SUBXIDS)
+ * By releasing savepoints when reaching 56, we ensure we stay below this number but don't have to release savepoints all the time
+ */
+const MAX_ACTIVE_SAVEPOINTS = 56;
 
 export class PrismaTestingHelper<T extends {
   $transaction(arg: unknown[], options?: unknown): Promise<unknown>;
@@ -151,18 +156,29 @@ export class PrismaTestingHelper<T extends {
       lockResolve = await this.acquireTransactionLock();
     }
 
-    const savepointName = `transactional_testing_${this.savepointId++}`;
     try {
-      if(transactionClient == null) {
+      if (transactionClient == null) {
         throw new Error('[transactional-prisma-testing] Invalid call to $transaction while no transaction is active.');
       }
-      await transactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
-      const ret = await this.asyncLocalStorage.run({ transactionSavepoint: savepointName }, func);
-      await transactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT ${savepointName}`);
-      return ret;
-    } catch(err) {
-      await transactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
-      throw err;
+
+      if (transactionClient !== this.currentPrismaTransactionClient) {
+        throw new Error('[transactional-prisma-testing] Transaction client changed (and old transaction rollbacked) before query could be executed. Make sure you await all queries and your test does not end before all queries have been executed.');
+      }
+
+      const savepointIdToRelease = this.savepointId - MAX_ACTIVE_SAVEPOINTS;
+      if (savepointIdToRelease >= 0 && savepointIdToRelease % MAX_ACTIVE_SAVEPOINTS === 0) {
+        // This will release all later savepoints as well
+        await transactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT trnsctl_tst_${savepointIdToRelease}`);
+      }
+
+      const savepointName = `trnsctl_tst_${this.savepointId++}`;
+      try {
+        await transactionClient.$executeRawUnsafe(`SAVEPOINT ${savepointName}`);
+        return await this.asyncLocalStorage.run({ transactionSavepoint: savepointName }, func);
+      } catch (err) {
+        await transactionClient?.$executeRawUnsafe(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+        throw err;
+      }
     } finally {
       this.transactionLock = null;
       lockResolve?.();
