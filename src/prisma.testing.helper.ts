@@ -95,9 +95,17 @@ export class PrismaTestingHelper<T extends {
                   for(const catchCallback of catchCallbacks) {
                     error = await catchCallback(error);
                   }
-                  reject(error);
+                  if (reject) {
+                    reject(error);
+                  } else {
+                    return Promise.reject(error);
+                  }
                 } catch(innerError) {
-                  reject(innerError);
+                  if (reject) {
+                    reject(innerError);
+                  } else {
+                    return Promise.reject(innerError);
+                  }
                 }
               } finally {
                 finallyCallbacks.forEach(c => c());
