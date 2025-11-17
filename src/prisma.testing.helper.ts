@@ -175,8 +175,13 @@ export class PrismaTestingHelper<T extends {
 
       const savepointIdToRelease = this.savepointId - MAX_ACTIVE_SAVEPOINTS;
       if (savepointIdToRelease >= 0 && savepointIdToRelease % MAX_ACTIVE_SAVEPOINTS === 0) {
-        // This will release all later savepoints as well
-        await transactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT trnsctl_tst_${savepointIdToRelease}`);
+        try {
+          // This will release all later savepoints as well
+          await transactionClient.$executeRawUnsafe(`RELEASE SAVEPOINT trnsctl_tst_${savepointIdToRelease}`);
+        } catch {
+          // Even if we can't release a savepoint, we don't have to throw an error since it won't affect the functionality
+          // of the original program - it may just cause a slight performance degradation if it didn't work
+        }
       }
 
       const savepointName = `trnsctl_tst_${this.savepointId++}`;
