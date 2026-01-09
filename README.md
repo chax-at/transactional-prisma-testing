@@ -32,7 +32,7 @@ let prismaService: PrismaService;
 async function before(): Promise<void> {
   if(prismaTestingHelper == null) {
     // Initialize testing helper if it has not been initialized before
-    const originalPrismaService = new PrismaService();
+    const originalPrismaService = new PrismaService(); // in newer prisma versions, you may have to pass an adapter here
     // Seed your database / Create source database state that will be used in each test case (if needed)
     // ...
     prismaTestingHelper = new PrismaTestingHelper(originalPrismaService);
